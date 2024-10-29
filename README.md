@@ -4,8 +4,6 @@
 
 ## 使用方法
 
-在config.py中配置好参数
-
 安装依赖
 
 ```shell
@@ -17,6 +15,10 @@ pip install -r requirements.txt
 ```shell
 python main.py
 ```
+
+>第一次运行会自动生成配置文件
+
+在config.py中配置好全部参数后，再次运行即可。
 
 ## 配置填写指南
 
