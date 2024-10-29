@@ -53,6 +53,4 @@ python main.py
 
 ## 问题反馈
 
-复制到微信打开 11月5日前有效
-
-https://weixin.qq.com/g/AwYAAIUxfMyTAKnC2tMhoI53paRYf120rGdybfxvkrot-AQ52D23rKrFqGrnlDuf
+![](https://cdn.sourcedream.cn/image/wechatInvite.jpg)
