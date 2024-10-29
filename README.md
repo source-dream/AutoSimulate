@@ -48,6 +48,8 @@ python main.py
 
 + [ ] 接续模拟，可在不停止程序的情况下新增模拟任务
 
++ [ ] 配置升级，支持升级配置，无需重写
+
 ## 其他资源链接
 
 链接：https://pan.baidu.com/s/1DFQkbilZnephkZ715i2gGg?pwd=bibr 
