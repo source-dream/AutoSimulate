@@ -1,4 +1,3 @@
-# 检查配置
 import os
 from log import logger
 if not os.path.exists('config.py'):
@@ -18,10 +17,10 @@ from simulate import simulate
 import threading
 import queue
 import signal
-import sys
+import functools
 
 # 线程池创建
-executor = concurrent.futures.ThreadPoolExecutor()
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT)
 result_queue = queue.Queue()  # 用于保存任务结果的队列
 terminate_flag = threading.Event()  # 用于控制任务终止的标志
 
@@ -36,25 +35,27 @@ def schedule_with_delay(tasks):
 
     def limited_task(task):
         with semaphore:
-            if terminate_flag.is_set():
-                result_queue.put(None)
-            else:
-                return task()
+            if not terminate_flag.is_set():
+                result = task()
+                result_queue.put(result)
 
     for task in tasks:
-        future = executor.submit(limited_task, task)
-        future.add_done_callback(lambda f: result_queue.put(f.result()))  # 将结果放入队列
+        if terminate_flag.is_set():
+            break
+        executor.submit(limited_task, task)
         sleep(DELAY)
 
 def log_results():
     """
     日志输出线程，从队列中获取并输出任务结果。
     """
+    logger.info("日志线程开始监听")
     while True:
-        result = result_queue.get()
-        if result is None:  # 当接收到 None 时退出
-            break
         try:
+            result = result_queue.get()  # 设置超时时间，避免一直阻塞
+            if result is None:  # 当接收到 None 时退出
+                logger.info("日志输出线程结束")
+                break
             alpha_id, err = result
             if err:
                 logger.info(f"Alpha回测失败: {err}")
@@ -69,10 +70,13 @@ def signal_handler(sig, frame):
     """
     信号处理函数，用于捕获 Ctrl+C 终止信号
     """
-    print("\n正在终止程序(等待进行中的任务结束)...")
-    terminate_flag.set() # 设置终止标志
-    executor.shutdown(wait=True) # 立即关闭线程池
-    sys.exit(0)  # 退出程序
+    logger.info("正在终止程序(等待进行中的任务结束)...")
+    terminate_flag.set()  # 设置终止标志
+    executor.shutdown()  # 等待线程池中的任务结束
+    result_queue.put(None)  # 通知日志线程退出
+    result_queue.join()  # 等待日志线程退出
+    logger.info("程序终止")
+    exit(0)
 
 # 设置 Ctrl+C 信号处理
 signal.signal(signal.SIGINT, signal_handler)
@@ -101,11 +105,12 @@ if __name__ == '__main__':
     logger.info(f"初始化Alpha列表完成")
 
     # 启动日志输出线程
-    executor.submit(log_results)
+    log_thread = threading.Thread(target=log_results, daemon=True)
+    log_thread.start()
 
     # 发送Alpha进行回测
     logger.info(f"开始Alpha回测 共{len(alpha_list)}个")
-    tasks = [lambda alpha=alpha: simulate(sess, alpha) for alpha in alpha_list]
+    tasks = [functools.partial(simulate, sess, alpha) for alpha in alpha_list]
     
     try:
         schedule_with_delay(tasks)
@@ -113,5 +118,6 @@ if __name__ == '__main__':
         signal_handler(None, None)
 
     # 等待队列处理完所有项目
+    result_queue.put(None)
     result_queue.join()
-    result_queue.put(None) # 发送停止信号
+    
