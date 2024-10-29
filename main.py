@@ -23,6 +23,7 @@ import sys
 # 线程池创建
 executor = concurrent.futures.ThreadPoolExecutor()
 result_queue = queue.Queue()  # 用于保存任务结果的队列
+terminate_flag = threading.Event()  # 用于控制任务终止的标志
 
 def schedule_with_delay(tasks):
     """
@@ -35,7 +36,10 @@ def schedule_with_delay(tasks):
 
     def limited_task(task):
         with semaphore:
-            return task()
+            if terminate_flag.is_set():
+                result_queue.put(None)
+            else:
+                return task()
 
     for task in tasks:
         future = executor.submit(limited_task, task)
@@ -53,7 +57,7 @@ def log_results():
         try:
             alpha_id, err = result
             if err:
-                logger.error(f"Alpha回测失败: {err}")
+                logger.info(f"Alpha回测失败: {err}")
             else:
                 logger.info(f"Alpha回测成功 Alpha ID: {alpha_id}")
         except Exception as e:
@@ -65,10 +69,9 @@ def signal_handler(sig, frame):
     """
     信号处理函数，用于捕获 Ctrl+C 终止信号
     """
-    print("\n正在终止程序...")
-    result_queue.put(None)  # 发送停止信号给日志线程
-    log_thread.join()  # 等待日志线程结束
-    executor.shutdown(wait=False)  # 立即关闭线程池
+    print("\n正在终止程序(等待进行中的任务结束)...")
+    terminate_flag.set() # 设置终止标志
+    executor.shutdown(wait=True) # 立即关闭线程池
     sys.exit(0)  # 退出程序
 
 # 设置 Ctrl+C 信号处理
@@ -98,8 +101,7 @@ if __name__ == '__main__':
     logger.info(f"初始化Alpha列表完成")
 
     # 启动日志输出线程
-    log_thread = threading.Thread(target=log_results, daemon=True)
-    log_thread.start()
+    executor.submit(log_results)
 
     # 发送Alpha进行回测
     logger.info(f"开始Alpha回测 共{len(alpha_list)}个")
@@ -110,7 +112,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         signal_handler(None, None)
 
-    # 等待所有任务完成
-    result_queue.join()  # 阻塞直到队列处理完所有项目
-    result_queue.put(None)  # 发送停止信号
-    log_thread.join()
+    # 等待队列处理完所有项目
+    result_queue.join()
+    result_queue.put(None) # 发送停止信号

@@ -4,6 +4,7 @@ from typing import Optional
 from log import logger
 
 def simulate(sess: requests.Session, alpha) -> tuple[Optional[str], Optional[str]]:
+    # 开始模拟
     logger.info(f"Start Simulation: {alpha}")
     res = sess.post(
         'https://api.worldquantbrain.com/simulations',
@@ -12,6 +13,8 @@ def simulate(sess: requests.Session, alpha) -> tuple[Optional[str], Optional[str
     url = res.headers.get('Location')
     if not url:
         return None, "Failed to retrieve simulation URL from response headers."
+    
+    # 等待模拟结果
     while True:
         sim_progress_resp = sess.get(url)
         retry_after_sec = float(sim_progress_resp.headers.get("Retry-After", 0))
@@ -19,7 +22,10 @@ def simulate(sess: requests.Session, alpha) -> tuple[Optional[str], Optional[str
             break
         logger.info(f"Alpha is still in progress. Waiting for {retry_after_sec} seconds.")
         sleep(retry_after_sec)
-    if sim_progress_resp.json()["status"] == "ERROR":
-        return None, sim_progress_resp.json()["error"]
-    alpha_id = sim_progress_resp.json()["alpha"]
+    
+    # 获取模拟结果
+    data = sim_progress_resp.json()
+    if data["status"] == "ERROR":
+        return None, data["message"]
+    alpha_id = data["alpha"]
     return alpha_id, None
