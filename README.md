@@ -36,7 +36,7 @@ python main.py
 
 + [x] 更方便的配置
 
-+ [ ] 保存历史记录(跳过已模拟的)
++ [ ] 保存历史记录，跳过重复的
 
 + [ ] 添加预计耗时功能
 
@@ -44,6 +44,15 @@ python main.py
 
 + [ ] 优化显示
 
++ [ ] 连续模拟
+
 ## 其他资源链接
 
+链接：https://pan.baidu.com/s/1DFQkbilZnephkZ715i2gGg?pwd=bibr 
+提取码：bibr 
 
+## 问题反馈
+
+复制到微信打开 11月5日前有效
+
+https://weixin.qq.com/g/AwYAAIUxfMyTAKnC2tMhoI53paRYf120rGdybfxvkrot-AQ52D23rKrFqGrnlDuf
