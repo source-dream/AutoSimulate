@@ -18,6 +18,7 @@ import threading
 import queue
 import signal
 import functools
+from db import *
 
 # 线程池创建
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT)
@@ -65,7 +66,7 @@ def log_results():
             else:
                 logger.info(f"Alpha回测成功 Alpha ID: {alpha_id}")
         except Exception as e:
-            logger.error(f"任务出错: {e}")
+            logger.error(f"日志输出出错: {e}")
         finally:
             result_queue.task_done()
 
@@ -114,6 +115,15 @@ if __name__ == '__main__':
             }
             alpha_list.append(simulation_data)
         logger.info(f"初始化Alpha列表完成")
+    
+    # 移除已经回测过的Alpha
+    count = 0
+    for alpha in alpha_list:
+        if is_record_exist("alpha", alpha):
+            alpha_list.remove(alpha)
+            count += 1
+    if count:
+        logger.info(f"已移除{count}个已经回测过的Alpha")
 
     # 启动日志输出线程
     log_thread = threading.Thread(target=log_results, daemon=True)
