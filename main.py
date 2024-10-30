@@ -10,7 +10,7 @@ if not os.path.exists('config.py'):
 from config import *
 
 from login import login
-from dataset import get_datafields
+from dataset import get_datafields, generate_expression
 from time import sleep
 import concurrent.futures
 from simulate import simulate
@@ -98,13 +98,29 @@ if __name__ == '__main__':
         logger.info(f"使用自定义数据字段")
     else:
         dataset = get_datafields(sess=sess, searchScope=SEARCH_SCOPE, dataset_id=DATASET_ID)
+        
+        # 过滤出MATRIX类型的数据字段
+        dataset = dataset[dataset['type'] == 'MATRIX']
+        
         datafields_list = dataset['id'].values
         logger.info(f"获取数据字段完成")
 
     # 构造Alpha列表
+    alpha_list = []
     if ALPHA_LIST:
         alpha_list = ALPHA_LIST
         logger.info(f"使用自定义Alpha列表")
+    elif REGULAR_CUSTOM:
+        logger.info(f"使用自定义生成Alpha列表")
+        regular_list = generate_expression(REGULAR_CUSTOM, datafields_list)
+        for regular in regular_list:
+            simulation_data = {
+                'type': 'REGULAR',
+                'settings': SETTINGS,
+                'regular': regular
+            }
+            alpha_list.append(simulation_data)
+        logger.info(f"生成Alpha列表完成")
     else:
         alpha_list = []
         for datafield in datafields_list:

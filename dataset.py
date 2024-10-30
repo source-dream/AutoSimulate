@@ -1,6 +1,7 @@
 # 数据获取模块
-from config import BASE_URL
+from config import BASE_URL, REGULAR_CUSTOM
 import pandas as pd
+from itertools import product
 
 def get_datafields(sess, searchScope, dataset_id='', search='') -> pd.DataFrame:
     """
@@ -61,3 +62,41 @@ def get_datafields(sess, searchScope, dataset_id='', search='') -> pd.DataFrame:
     datafields_list_flat = [item for sublist in datafields_list for item in sublist]
     datafields_df = pd.DataFrame(datafields_list_flat)
     return datafields_df
+
+# 递归遍历REGULAR_CUSTOM生成表达式
+def generate_expression(node, datafields_list):
+    expressions = []
+
+    # If the node is a dictionary, it contains operators and children
+    if isinstance(node, dict):
+        operators = node["node"]
+        children = node["childrean"]
+
+        # Process children recursively
+        if isinstance(children, (tuple, list)):
+            # Generate expressions for each child
+            child_expressions_list = [generate_expression(child, datafields_list) for child in children]
+            child_combinations = list(product(*child_expressions_list))
+            for op in operators:
+                for child_combination in child_combinations:
+                    expr_args = ", ".join(child_combination)
+                    expr = f"{op}({expr_args})"
+                    expressions.append(expr)
+        else:
+            # If children is a single element, process it recursively
+            child_expressions = generate_expression(children, datafields_list)
+            for op in operators:
+                for child_expr in child_expressions:
+                    expr = f"{op}({child_expr})"
+                    expressions.append(expr)
+    elif isinstance(node, list):
+        # If the node is a list, return it as expressions
+        expressions.extend([str(item) for item in node])
+    elif node == "datafields":
+        # If the node is "datafields_list", return the datafields list
+        expressions.extend(datafields_list)
+    else:
+        # If the node is a single value, wrap it in a list
+        expressions.append(str(node))
+
+    return expressions
