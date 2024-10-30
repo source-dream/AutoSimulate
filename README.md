@@ -28,7 +28,11 @@ python main.py
 
 {}代表datafields
 
-例子: `rank({})`
+案例
+
+```python
+REGULAR = "rank({})"
+```
 
 ## 功能
 
