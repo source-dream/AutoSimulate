@@ -2,11 +2,11 @@
 import requests
 import json
 from os.path import expanduser
-from typing import Optional
+from typing import Optional, Tuple
 from requests.auth import HTTPBasicAuth
 from config import BASE_URL, USERNAME, PASSWORD
 
-def login() -> tuple[Optional[requests.Session], Optional[str]]:
+def login() -> Tuple[Optional[requests.Session], Optional[str]]:
     """
     登录Brain平台
 

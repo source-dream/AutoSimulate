@@ -4,9 +4,10 @@
 
 import sqlite3
 import json
+from typing import Tuple
 from log import logger
 
-def open_db() -> tuple[sqlite3.Connection, sqlite3.Cursor]:
+def open_db() -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     return conn, cursor

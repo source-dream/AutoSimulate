@@ -1,10 +1,10 @@
 import requests
 from time import sleep
-from typing import Optional
+from typing import Optional, Tuple
 from log import logger
 from db import add_record_memory
 
-def simulate(sess: requests.Session, alpha) -> tuple[Optional[str], Optional[str]]:
+def simulate(sess: requests.Session, alpha) -> Tuple[Optional[str], Optional[str]]:
     try:
         # 开始模拟
         logger.info(f"Start Simulation: {alpha}")
